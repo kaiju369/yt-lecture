@@ -32,10 +32,10 @@ export interface Stroke {
 export interface SnapshotInfo {
   status: SnapshotStatus;
   /** data URL of flattened frame + ink (or reference image) */
-  dataUrl?: string;
-  width?: number;
-  height?: number;
-  captureMethod?: "html5-video" | "youtube-thumbnail" | "ink-only" | "none";
+  dataUrl?: string | undefined;
+  width?: number | undefined;
+  height?: number | undefined;
+  captureMethod?: "html5-video" | "youtube-thumbnail" | "ink-only" | "none" | undefined;
 }
 
 export interface Annotation {
@@ -43,8 +43,8 @@ export interface Annotation {
   schemaVersion: number;
   sourceType: SourceType;
   sourceKey: string;
-  sourceUrl?: string;
-  youtubeVideoId?: string;
+  sourceUrl?: string | undefined;
+  youtubeVideoId?: string | undefined;
   title: string;
   /** high precision seconds */
   timestamp: number;
@@ -61,7 +61,7 @@ export interface RecoveryDoc {
   title: string;
   sourceType: SourceType;
   sourceKey: string;
-  youtubeVideoId?: string;
+  youtubeVideoId?: string | undefined;
   timestamp: number;
   duration: number;
   videoAspectRatio: number;
@@ -73,7 +73,7 @@ export interface VideoRecord {
   key: string;
   title: string;
   sourceType: SourceType;
-  youtubeVideoId?: string;
+  youtubeVideoId?: string | undefined;
   lastPosition: number;
   duration: number;
   updatedAt: number;

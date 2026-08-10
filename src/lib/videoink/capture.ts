@@ -106,7 +106,7 @@ export interface CaptureContext {
   rect: ContentRect;
   strokes: Stroke[];
   videoEl: HTMLVideoElement | null;
-  youtubeVideoId?: string;
+  youtubeVideoId?: string | undefined;
   /** viewport rect of the visible video content, for screen capture cropping */
   viewportRect: DOMRect | null;
   session: ScreenCaptureSession | null;
