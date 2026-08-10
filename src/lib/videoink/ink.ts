@@ -1,0 +1,111 @@
+import getStroke from "perfect-freehand";
+import type { Stroke, ToolKind } from "./types";
+import type { ContentRect } from "./geometry";
+
+export interface PenPreset {
+  id: string;
+  label: string;
+  size: number; // fraction of content height
+}
+
+export const PEN_PRESETS: PenPreset[] = [
+  { id: "fine", label: "Fine", size: 0.005 },
+  { id: "medium", label: "Medium", size: 0.009 },
+  { id: "bold", label: "Bold", size: 0.016 },
+];
+
+export const INK_COLORS = [
+  "#f5f1e8",
+  "#ffd166",
+  "#7ec8ff",
+  "#ff8a7a",
+  "#8ce99a",
+  "#c79bff",
+];
+
+export const HIGHLIGHTER_COLORS = ["#ffd166", "#7ec8ff", "#8ce99a", "#ff8a7a"];
+
+function strokeOptions(tool: ToolKind, sizePx: number) {
+  if (tool === "highlighter") {
+    return {
+      size: sizePx,
+      thinning: 0,
+      smoothing: 0.6,
+      streamline: 0.5,
+      simulatePressure: false,
+      last: true,
+    };
+  }
+  return {
+    size: sizePx,
+    thinning: 0.55,
+    smoothing: 0.55,
+    streamline: 0.4,
+    simulatePressure: false,
+    last: true,
+  };
+}
+
+export function strokeToPath2D(
+  stroke: Stroke,
+  rect: ContentRect,
+): Path2D | null {
+  if (stroke.points.length === 0) return null;
+  const sizePx = Math.max(1, stroke.size * rect.height) * (stroke.tool === "highlighter" ? 3.2 : 1);
+  const input = stroke.points.map((p) => [
+    rect.left + p.x * rect.width,
+    rect.top + p.y * rect.height,
+    p.pressure,
+  ]);
+  const outline = getStroke(input, strokeOptions(stroke.tool, sizePx));
+  if (outline.length < 2) return null;
+  const path = new Path2D();
+  const first = outline[0]!;
+  path.moveTo(first[0]!, first[1]!);
+  for (let i = 1; i < outline.length; i++) {
+    const p = outline[i]!;
+    path.lineTo(p[0]!, p[1]!);
+  }
+  path.closePath();
+  return path;
+}
+
+export function drawStroke(
+  ctx: CanvasRenderingContext2D,
+  stroke: Stroke,
+  rect: ContentRect,
+) {
+  const path = strokeToPath2D(stroke, rect);
+  if (!path) return;
+  ctx.save();
+  ctx.globalAlpha = stroke.opacity;
+  ctx.globalCompositeOperation =
+    stroke.tool === "highlighter" ? "multiply" : "source-over";
+  ctx.fillStyle = stroke.color;
+  ctx.fill(path);
+  ctx.restore();
+}
+
+export function drawStrokes(
+  ctx: CanvasRenderingContext2D,
+  strokes: Stroke[],
+  rect: ContentRect,
+) {
+  for (const s of strokes) drawStroke(ctx, s, rect);
+}
+
+/** Hit test used by the stroke eraser. */
+export function strokeHitsPoint(
+  stroke: Stroke,
+  x: number,
+  y: number,
+  radius: number,
+): boolean {
+  const r = radius + stroke.size * 0.8;
+  for (const p of stroke.points) {
+    const dx = p.x - x;
+    const dy = p.y - y;
+    if (dx * dx + dy * dy <= r * r) return true;
+  }
+  return false;
+}
