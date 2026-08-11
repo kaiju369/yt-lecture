@@ -1,6 +1,6 @@
 import type { ContentRect } from "./geometry";
-import { drawStrokes } from "./ink";
-import type { SnapshotInfo, Stroke } from "./types";
+import { renderObjects } from "./objects";
+import type { PageObject, SnapshotInfo } from "./types";
 import { youtubeThumbnail } from "./youtube";
 
 const MAX_W = 960;
@@ -104,7 +104,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 
 export interface CaptureContext {
   rect: ContentRect;
-  strokes: Stroke[];
+  objects: PageObject[];
   videoEl: HTMLVideoElement | null;
   youtubeVideoId?: string | undefined;
   /** viewport rect of the visible video content, for screen capture cropping */
@@ -113,7 +113,7 @@ export interface CaptureContext {
 }
 
 export async function captureSnapshot(ctxIn: CaptureContext): Promise<SnapshotInfo> {
-  const { rect, strokes, videoEl, youtubeVideoId, viewportRect, session } = ctxIn;
+  const { rect, objects, videoEl, youtubeVideoId, viewportRect, session } = ctxIn;
   const { canvas, ctx } = makeCanvas(rect);
   const target = inkRect(rect);
 
@@ -121,7 +121,7 @@ export async function captureSnapshot(ctxIn: CaptureContext): Promise<SnapshotIn
   if (videoEl && videoEl.videoWidth) {
     try {
       ctx.drawImage(videoEl, 0, 0, rect.width, rect.height);
-      drawStrokes(ctx, strokes, target);
+      renderObjects(ctx, objects, target);
       const dataUrl = toDataUrl(canvas);
       if (dataUrl) {
         return {
@@ -157,7 +157,7 @@ export async function captureSnapshot(ctxIn: CaptureContext): Promise<SnapshotIn
     try {
       const img = await loadImage(youtubeThumbnail(youtubeVideoId));
       ctx.drawImage(img, 0, 0, rect.width, rect.height);
-      drawStrokes(ctx, strokes, target);
+      renderObjects(ctx, objects, target);
       const dataUrl = toDataUrl(canvas);
       if (dataUrl) {
         return {
@@ -178,7 +178,7 @@ export async function captureSnapshot(ctxIn: CaptureContext): Promise<SnapshotIn
     ctx.clearRect(0, 0, rect.width, rect.height);
     ctx.fillStyle = "#11100e";
     ctx.fillRect(0, 0, rect.width, rect.height);
-    drawStrokes(ctx, strokes, target);
+    renderObjects(ctx, objects, target);
     const dataUrl = toDataUrl(canvas);
     if (dataUrl) {
       return {
