@@ -51,6 +51,8 @@
     "embla-carousel-react": "^8.6.0",
     "idb": "^8.0.3",
     "input-otp": "^1.4.2",
+    "jspdf": "^4.2.1",
+    "jszip": "^3.10.1",
     "lucide-react": "^0.575.0",
     "perfect-freehand": "^1.2.3",
     "react": "^19.2.0",
