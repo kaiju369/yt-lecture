@@ -92,7 +92,7 @@ export const ACTIONS: ActionDef[] = [
   { id: "page.next", label: "Next page", group: "Pages", defaultKey: "." },
   { id: "library.toggle", label: "Toggle library panel", group: "App", defaultKey: "l" },
   { id: "export", label: "Export…", group: "App", defaultKey: "shift+s" },
-  { id: "settings", label: "Settings", group: "App", defaultKey: "," + "shift" },
+  { id: "settings", label: "Settings", group: "App", defaultKey: "mod+," },
   { id: "cancel", label: "Cancel / exit tool", group: "App", defaultKey: "escape" },
   { id: "playPause", label: "Play / pause", group: "App", defaultKey: "space" },
 ];
