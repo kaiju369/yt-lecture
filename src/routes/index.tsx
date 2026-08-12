@@ -305,12 +305,28 @@ function Workstation() {
     await putPage(page);
     setPages(await listPages());
     editor.markSaved();
+    editor.reset([]);
+    setActivePage(null);
     setAnnotating(false);
     setEditingTextId(null);
     void clearRecovery();
     playerRef.current?.play();
     toast.success("Page saved");
   }, [annotating, editor, activePage, rect, source, videoTitle, frozenAt, duration, aspect]);
+
+  const deleteCurrentPage = useCallback(async () => {
+    if (activePage) {
+      await deletePage(activePage.id);
+      setPages(await listPages());
+      toast.success("Page deleted");
+    }
+    setActivePage(null);
+    editor.reset([]);
+    setAnnotating(false);
+    setEditingTextId(null);
+    void clearRecovery();
+  }, [activePage, editor]);
+
 
   const addBlankPage = useCallback(async () => {
     const ranks = await nextRanks();
