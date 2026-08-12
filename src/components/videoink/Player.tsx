@@ -75,14 +75,21 @@ export const Player = forwardRef<PlayerHandle, Props>(function Player(
       if (cancelled || !ytHostRef.current) return;
       const YT = (window as unknown as Record<string, any>)["YT"];
       ytRef.current?.destroy();
-      ytRef.current = new YT.Player(ytHostRef.current, {
+      ytHostRef.current.innerHTML = "";
+      const mount = document.createElement("div");
+      mount.className = "h-full w-full";
+      ytHostRef.current.appendChild(mount);
+      ytRef.current = new YT.Player(mount, {
         videoId: source.videoId,
+        host: "https://www.youtube-nocookie.com",
         playerVars: {
           rel: 0,
           modestbranding: 1,
           playsinline: 1,
           controls: 0,
           disablekb: 1,
+          enablejsapi: 1,
+          origin: window.location.origin,
         },
         events: {
           onReady: (e: { target: YTPlayer }) => {
@@ -99,6 +106,7 @@ export const Player = forwardRef<PlayerHandle, Props>(function Player(
         },
       });
     });
+
     return () => {
       cancelled = true;
     };
