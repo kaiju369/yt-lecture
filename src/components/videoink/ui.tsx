@@ -3,21 +3,30 @@ import {
   ArrowUpRight,
   Circle,
   Eraser,
+  FileX2,
   Highlighter,
   Lasso,
+  Maximize,
   Minus,
+  MonitorUp,
   MousePointer2,
-  Move,
+  PaintBucket,
+  Pause,
   Pen,
+  Play,
   Redo2,
+  RotateCcw,
+  RotateCw,
   Save,
   Square,
-  SquareDashed,
   Trash2,
   Type,
   Undo2,
+  Volume2,
+  VolumeX,
   X,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
