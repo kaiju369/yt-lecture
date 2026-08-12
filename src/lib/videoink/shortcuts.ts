@@ -62,12 +62,12 @@ export const ACTIONS: ActionDef[] = [
   { id: "annotate", label: "Annotate / Freeze", group: "App", defaultKey: "a" },
   { id: "save", label: "Save page", group: "App", defaultKey: "s" },
   { id: "tool.shape", label: "Shape", group: "Tools", defaultKey: "d" },
-  { id: "tool.freehandEraser", label: "Freehand eraser", group: "Tools", defaultKey: "f" },
+  { id: "shape.fill", label: "Toggle shape fill", group: "Ink", defaultKey: "f" },
   { id: "tool.lasso", label: "Lasso", group: "Tools", defaultKey: "g" },
   { id: "undo", label: "Undo", group: "Edit", defaultKey: "z" },
   { id: "redo", label: "Redo", group: "Edit", defaultKey: "x" },
   { id: "customColor", label: "Custom colour", group: "Ink", defaultKey: "c" },
-  { id: "tool.move", label: "Move selection", group: "Tools", defaultKey: "v" },
+  { id: "capture", label: "Screen capture on/off", group: "App", defaultKey: "v" },
   { id: "size.fine", label: "Fine width", group: "Ink", defaultKey: "1" },
   { id: "size.medium", label: "Medium width", group: "Ink", defaultKey: "2" },
   { id: "size.bold", label: "Bold width", group: "Ink", defaultKey: "3" },
@@ -78,9 +78,9 @@ export const ACTIONS: ActionDef[] = [
   { id: "tool.prev", label: "Previous tool", group: "Tools", defaultKey: "8" },
   { id: "tool.next", label: "Next tool", group: "Tools", defaultKey: "9" },
   { id: "tool.reset", label: "Reset to pen", group: "Tools", defaultKey: "0" },
-  { id: "tool.rectEraser", label: "Rectangle eraser", group: "Tools", defaultKey: "shift+r" },
-  { id: "tool.circleEraser", label: "Circle eraser", group: "Tools", defaultKey: "shift+f" },
+  { id: "page.delete", label: "Delete current page", group: "Pages", defaultKey: "shift+backspace" },
   { id: "eraser.cycle", label: "Cycle eraser mode", group: "Tools", defaultKey: "shift+e" },
+
   { id: "clear", label: "Clear page ink", group: "Edit", defaultKey: "shift+x" },
   { id: "delete", label: "Delete selection", group: "Edit", defaultKey: "backspace" },
   { id: "duplicate", label: "Duplicate selection", group: "Edit", defaultKey: "mod+d" },
@@ -99,7 +99,7 @@ export const ACTIONS: ActionDef[] = [
 
 export type KeyMap = Record<string, string>;
 
-export const STORAGE_KEY = "videoink.shortcuts.v1";
+export const STORAGE_KEY = "videoink.shortcuts.v2";
 
 export function defaultKeyMap(): KeyMap {
   const m: KeyMap = {};
