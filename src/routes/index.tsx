@@ -709,6 +709,10 @@ function Workstation() {
                   onSave={() => void savePage()}
                   onCancel={cancelAnnotation}
                   onOpenColor={() => setSettingsOpen(true)}
+                  captureActive={captureActive}
+                  onToggleCapture={() => void toggleCapture()}
+                  canDeletePage={!!activePage}
+                  onDeletePage={() => void deleteCurrentPage()}
                 />
               ) : (
                 <Button className="pointer-events-auto" onClick={startAnnotation}>
@@ -717,7 +721,60 @@ function Workstation() {
               )}
             </div>
           </div>
+
+          {source && (
+            <div className="border-t border-border/70 p-2">
+              <VideoControls
+                playing={playing}
+                current={current}
+                duration={duration}
+                volume={volume}
+                muted={muted}
+                rate={rate}
+                disabled={annotating}
+                onPlayPause={() => {
+                  const p = playerRef.current;
+                  if (!p) return;
+                  if (p.isPlaying()) p.pause();
+                  else p.play();
+                }}
+                onSeek={(t) => {
+                  setCurrent(t);
+                  playerRef.current?.seek(t);
+                }}
+                onSkip={(d) => {
+                  const p = playerRef.current;
+                  if (!p) return;
+                  const t = Math.max(0, Math.min(p.getCurrentTime() + d, duration || Infinity));
+                  setCurrent(t);
+                  p.seek(t);
+                }}
+                onVolume={(v) => {
+                  setVolume(v);
+                  setMuted(v === 0);
+                  playerRef.current?.setVolume(v);
+                  playerRef.current?.setMuted(v === 0);
+                }}
+                onMute={() => {
+                  const next = !muted;
+                  setMuted(next);
+                  playerRef.current?.setMuted(next);
+                }}
+                onRate={(r) => {
+                  setRate(r);
+                  playerRef.current?.setPlaybackRate(r);
+                }}
+                onFullscreen={() => {
+                  const el = stageRef.current;
+                  if (!el) return;
+                  if (document.fullscreenElement) void document.exitFullscreen();
+                  else void el.requestFullscreen?.();
+                }}
+              />
+            </div>
+          )}
         </section>
+
 
         {libraryOpen && (
           <aside className="w-[340px] shrink-0 border-l border-border/70 p-3 xl:w-[400px]">
