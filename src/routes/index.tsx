@@ -558,14 +558,18 @@ function Workstation() {
     keys,
     editor,
     prefs.eraserMode,
+    prefs.shapeFill,
     annotating,
     editingTextId,
     startAnnotation,
     savePage,
     cancelAnnotation,
     addBlankPage,
+    deleteCurrentPage,
+    toggleCapture,
     setPrefs,
   ]);
+
 
   /* ----------------------------- source ----------------------------- */
   const openUrl = () => {
