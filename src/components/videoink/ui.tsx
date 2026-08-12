@@ -3,21 +3,30 @@ import {
   ArrowUpRight,
   Circle,
   Eraser,
+  FileX2,
   Highlighter,
   Lasso,
+  Maximize,
   Minus,
+  MonitorUp,
   MousePointer2,
-  Move,
+  PaintBucket,
+  Pause,
   Pen,
+  Play,
   Redo2,
+  RotateCcw,
+  RotateCw,
   Save,
   Square,
-  SquareDashed,
   Trash2,
   Type,
   Undo2,
+  Volume2,
+  VolumeX,
   X,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -59,14 +68,13 @@ const TOOL_BUTTONS: { tool: ToolId; action: ActionId; icon: typeof Pen; label: s
   { tool: "pen", action: "tool.pen", icon: Pen, label: "Pen" },
   { tool: "highlighter", action: "tool.highlighter", icon: Highlighter, label: "Highlighter" },
   { tool: "eraser", action: "tool.eraser", icon: Eraser, label: "Eraser" },
-  { tool: "freehandEraser", action: "tool.freehandEraser", icon: SquareDashed, label: "Freehand eraser" },
   { tool: "text", action: "tool.text", icon: Type, label: "Text" },
   { tool: "line", action: "tool.line", icon: Minus, label: "Line" },
   { tool: "arrow", action: "tool.arrow", icon: ArrowUpRight, label: "Arrow" },
   { tool: "shape", action: "tool.shape", icon: Square, label: "Shape" },
   { tool: "lasso", action: "tool.lasso", icon: Lasso, label: "Lasso" },
-  { tool: "move", action: "tool.move", icon: Move, label: "Move" },
 ];
+
 
 export const SHAPE_KINDS: ShapeKind[] = [
   "line",
@@ -102,7 +110,12 @@ interface ToolbarProps {
   onSave: () => void;
   onCancel: () => void;
   onOpenColor: () => void;
+  captureActive: boolean;
+  onToggleCapture: () => void;
+  canDeletePage: boolean;
+  onDeletePage: () => void;
 }
+
 
 function Hotkey({ combo }: { combo?: string | undefined }) {
   if (!combo) return null;
@@ -200,6 +213,42 @@ export function InkToolbar(p: ToolbarProps) {
       ))}
 
       <span className="mx-1 h-6 w-px bg-border" />
+
+      <Button
+        size="sm"
+        variant={p.prefs.shapeFill ? "secondary" : "ghost"}
+        className="gap-1 px-2"
+        title="Fill shapes"
+        onClick={() => p.setPrefs({ shapeFill: !p.prefs.shapeFill })}
+      >
+        <PaintBucket className="size-4" />
+        <Hotkey combo={p.keys["shape.fill"]} />
+      </Button>
+      <Button
+        size="sm"
+        variant={p.captureActive ? "secondary" : "ghost"}
+        className="gap-1 px-2"
+        title={p.captureActive ? "Screen capture on — click to stop" : "Enable screen capture for real frames"}
+        onClick={p.onToggleCapture}
+      >
+        <MonitorUp className="size-4" />
+        <Hotkey combo={p.keys["capture"]} />
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="gap-1 px-2 text-destructive"
+        title="Delete this page"
+        disabled={!p.canDeletePage}
+        onClick={p.onDeletePage}
+      >
+        <FileX2 className="size-4" />
+        <Hotkey combo={p.keys["page.delete"]} />
+      </Button>
+
+      <span className="mx-1 h-6 w-px bg-border" />
+
+
 
       <Button size="sm" variant="ghost" disabled={!p.canUndo} onClick={p.onUndo} className="gap-1 px-2">
         <Undo2 className="size-4" />
@@ -1061,5 +1110,120 @@ export function SettingsDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/* --------------------------- video controls --------------------------- */
+
+export interface VideoControlsProps {
+  playing: boolean;
+  current: number;
+  duration: number;
+  volume: number;
+  muted: boolean;
+  rate: number;
+  disabled?: boolean;
+  onPlayPause: () => void;
+  onSeek: (t: number) => void;
+  onSkip: (delta: number) => void;
+  onVolume: (v: number) => void;
+  onMute: () => void;
+  onRate: (r: number) => void;
+  onFullscreen: () => void;
+}
+
+const RATES = [0.5, 0.75, 1, 1.25, 1.5, 2];
+
+export function VideoControls(p: VideoControlsProps) {
+  return (
+    <div className="pointer-events-auto flex w-full items-center gap-2 rounded-xl border border-border/70 bg-card/95 px-2.5 py-1.5 shadow-lg backdrop-blur">
+      <Button
+        size="sm"
+        variant="secondary"
+        className="size-8 shrink-0 p-0"
+        onClick={p.onPlayPause}
+        disabled={p.disabled}
+        aria-label={p.playing ? "Pause" : "Play"}
+      >
+        {p.playing ? <Pause className="size-4" /> : <Play className="size-4" />}
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="size-8 shrink-0 p-0"
+        onClick={() => p.onSkip(-10)}
+        disabled={p.disabled}
+        aria-label="Back 10 seconds"
+      >
+        <RotateCcw className="size-4" />
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="size-8 shrink-0 p-0"
+        onClick={() => p.onSkip(10)}
+        disabled={p.disabled}
+        aria-label="Forward 10 seconds"
+      >
+        <RotateCw className="size-4" />
+      </Button>
+
+      <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+        {formatTime(p.current)}
+      </span>
+      <Slider
+        className="min-w-16 flex-1"
+        value={[Math.min(p.current, p.duration || 0)]}
+        min={0}
+        max={Math.max(p.duration, 1)}
+        step={0.1}
+        aria-label="Seek"
+        onValueChange={([v]) => p.onSeek(v ?? 0)}
+      />
+      <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+        {formatTime(p.duration)}
+      </span>
+
+      <Button
+        size="sm"
+        variant="ghost"
+        className="size-8 shrink-0 p-0"
+        onClick={p.onMute}
+        aria-label={p.muted ? "Unmute" : "Mute"}
+      >
+        {p.muted || p.volume === 0 ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
+      </Button>
+      <Slider
+        className="hidden w-20 shrink-0 sm:flex"
+        value={[p.muted ? 0 : p.volume * 100]}
+        min={0}
+        max={100}
+        aria-label="Volume"
+        onValueChange={([v]) => p.onVolume((v ?? 100) / 100)}
+      />
+
+      <Select value={String(p.rate)} onValueChange={(v) => p.onRate(Number(v))}>
+        <SelectTrigger className="h-8 w-[70px] shrink-0 text-xs" aria-label="Playback speed">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {RATES.map((r) => (
+            <SelectItem key={r} value={String(r)}>
+              {r}x
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Button
+        size="sm"
+        variant="ghost"
+        className="size-8 shrink-0 p-0"
+        onClick={p.onFullscreen}
+        aria-label="Fullscreen"
+      >
+        <Maximize className="size-4" />
+      </Button>
+    </div>
   );
 }

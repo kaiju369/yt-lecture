@@ -14,6 +14,7 @@ import {
   SettingsDialog,
   TextEditorOverlay,
   ToolIndicator,
+  VideoControls,
   type ExportRequest,
 } from "@/components/videoink/ui";
 import { computeContentRect } from "@/lib/videoink/geometry";
@@ -27,9 +28,10 @@ import {
   putPages,
   saveRecovery,
 } from "@/lib/videoink/db";
-import { captureSnapshot } from "@/lib/videoink/capture";
+import { ScreenCaptureSession, captureSnapshot } from "@/lib/videoink/capture";
 import { makeThumbnail } from "@/lib/videoink/render";
 import { exportPages, type ExportHandle } from "@/lib/videoink/export";
+
 import {
   DEFAULT_PREFS,
   applyTemplate,
@@ -55,6 +57,17 @@ import {
   type TextObject,
   type ToolId,
 } from "@/lib/videoink/types";
+
+/** Viewport rectangle of the visible video content, for screen-capture cropping. */
+function stageViewportRect(
+  el: HTMLDivElement | null,
+  rect: { left: number; top: number; width: number; height: number },
+): DOMRect | null {
+  if (!el || !rect.width || !rect.height) return null;
+  const box = el.getBoundingClientRect();
+  return new DOMRect(box.left + rect.left, box.top + rect.top, rect.width, rect.height);
+}
+
 
 export const Route = createFileRoute("/")({
   component: Workstation,
@@ -88,6 +101,15 @@ function Workstation() {
   const [duration, setDuration] = useState(0);
   const [aspect, setAspect] = useState(16 / 9);
   const [stage, setStage] = useState({ width: 0, height: 0 });
+
+  const [playing, setPlaying] = useState(false);
+  const [current, setCurrent] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [muted, setMuted] = useState(false);
+  const [rate, setRate] = useState(1);
+  const captureRef = useRef<ScreenCaptureSession | null>(null);
+  const [captureActive, setCaptureActive] = useState(false);
+
 
   const [prefs, setPrefsState] = useState<Prefs>(DEFAULT_PREFS);
   const [keys, setKeysState] = useState<KeyMap>(defaultKeyMap());
@@ -160,6 +182,51 @@ function Workstation() {
     [stage.width, stage.height, aspect],
   );
 
+  /* -------------------------- playback poll -------------------------- */
+  useEffect(() => {
+    if (!source) return;
+    const t = setInterval(() => {
+      const p = playerRef.current;
+      if (!p) return;
+      setCurrent(p.getCurrentTime());
+      setPlaying(p.isPlaying());
+      const d = p.getDuration();
+      if (d && Number.isFinite(d)) setDuration((prev) => (Math.abs(prev - d) > 0.5 ? d : prev));
+    }, 250);
+    return () => clearInterval(t);
+  }, [source]);
+
+  /* ------------------------- screen capture -------------------------- */
+  const toggleCapture = useCallback(async () => {
+    if (!ScreenCaptureSession.supported) {
+      toast.error("Screen capture is not supported in this browser");
+      return;
+    }
+    if (captureRef.current?.active) {
+      captureRef.current.stop();
+      captureRef.current = null;
+      setCaptureActive(false);
+      toast("Screen capture stopped");
+      return;
+    }
+    const session = new ScreenCaptureSession();
+    try {
+      await session.start(() => {
+        captureRef.current = null;
+        setCaptureActive(false);
+      });
+      captureRef.current = session;
+      setCaptureActive(true);
+      toast.success("Screen capture on — saved pages now keep the real frame");
+    } catch {
+      toast.error("Screen capture permission denied");
+    }
+  }, []);
+
+  useEffect(() => () => captureRef.current?.stop(), []);
+
+
+
   /* --------------------------- recovery ----------------------------- */
   useEffect(() => {
     if (!annotating) return;
@@ -221,9 +288,10 @@ function Workstation() {
           objects,
           videoEl: playerRef.current?.getVideoElement() ?? null,
           youtubeVideoId: source?.type === "youtube" ? source.videoId : undefined,
-          viewportRect: null,
-          session: null,
+          viewportRect: stageViewportRect(stageRef.current, rect),
+          session: captureRef.current,
         });
+
 
     const page: Page = {
       id: activePage?.id ?? uid(),
@@ -248,12 +316,28 @@ function Workstation() {
     await putPage(page);
     setPages(await listPages());
     editor.markSaved();
+    editor.reset([]);
+    setActivePage(null);
     setAnnotating(false);
     setEditingTextId(null);
     void clearRecovery();
     playerRef.current?.play();
     toast.success("Page saved");
   }, [annotating, editor, activePage, rect, source, videoTitle, frozenAt, duration, aspect]);
+
+  const deleteCurrentPage = useCallback(async () => {
+    if (activePage) {
+      await deletePage(activePage.id);
+      setPages(await listPages());
+      toast.success("Page deleted");
+    }
+    setActivePage(null);
+    editor.reset([]);
+    setAnnotating(false);
+    setEditingTextId(null);
+    void clearRecovery();
+  }, [activePage, editor]);
+
 
   const addBlankPage = useCallback(async () => {
     const ranks = await nextRanks();
@@ -438,22 +522,24 @@ function Workstation() {
         case "customColor":
           setSettingsOpen(true);
           break;
+        case "shape.fill":
+          setPrefs({ shapeFill: !prefs.shapeFill });
+          flashLabel(prefs.shapeFill ? "Fill off" : "Fill on");
+          break;
+        case "capture":
+          void toggleCapture();
+          break;
         case "eraser.cycle":
-          setPrefs({
-            eraserMode:
-              prefs.eraserMode === "stroke"
-                ? "freehand"
-                : prefs.eraserMode === "freehand"
-                  ? "rect"
-                  : prefs.eraserMode === "rect"
-                    ? "circle"
-                    : "stroke",
-          });
+          setPrefs({ eraserMode: prefs.eraserMode === "stroke" ? "freehand" : "stroke" });
           flashLabel("Eraser mode");
           break;
         case "page.blank":
           void addBlankPage();
           break;
+        case "page.delete":
+          void deleteCurrentPage();
+          break;
+
         case "library.toggle":
           setLibraryOpen((v) => !v);
           break;
@@ -483,14 +569,18 @@ function Workstation() {
     keys,
     editor,
     prefs.eraserMode,
+    prefs.shapeFill,
     annotating,
     editingTextId,
     startAnnotation,
     savePage,
     cancelAnnotation,
     addBlankPage,
+    deleteCurrentPage,
+    toggleCapture,
     setPrefs,
   ]);
+
 
   /* ----------------------------- source ----------------------------- */
   const openUrl = () => {
@@ -630,6 +720,10 @@ function Workstation() {
                   onSave={() => void savePage()}
                   onCancel={cancelAnnotation}
                   onOpenColor={() => setSettingsOpen(true)}
+                  captureActive={captureActive}
+                  onToggleCapture={() => void toggleCapture()}
+                  canDeletePage={!!activePage}
+                  onDeletePage={() => void deleteCurrentPage()}
                 />
               ) : (
                 <Button className="pointer-events-auto" onClick={startAnnotation}>
@@ -638,7 +732,60 @@ function Workstation() {
               )}
             </div>
           </div>
+
+          {source && (
+            <div className="border-t border-border/70 p-2">
+              <VideoControls
+                playing={playing}
+                current={current}
+                duration={duration}
+                volume={volume}
+                muted={muted}
+                rate={rate}
+                disabled={annotating}
+                onPlayPause={() => {
+                  const p = playerRef.current;
+                  if (!p) return;
+                  if (p.isPlaying()) p.pause();
+                  else p.play();
+                }}
+                onSeek={(t) => {
+                  setCurrent(t);
+                  playerRef.current?.seek(t);
+                }}
+                onSkip={(d) => {
+                  const p = playerRef.current;
+                  if (!p) return;
+                  const t = Math.max(0, Math.min(p.getCurrentTime() + d, duration || Infinity));
+                  setCurrent(t);
+                  p.seek(t);
+                }}
+                onVolume={(v) => {
+                  setVolume(v);
+                  setMuted(v === 0);
+                  playerRef.current?.setVolume(v);
+                  playerRef.current?.setMuted(v === 0);
+                }}
+                onMute={() => {
+                  const next = !muted;
+                  setMuted(next);
+                  playerRef.current?.setMuted(next);
+                }}
+                onRate={(r) => {
+                  setRate(r);
+                  playerRef.current?.setPlaybackRate(r);
+                }}
+                onFullscreen={() => {
+                  const el = stageRef.current;
+                  if (!el) return;
+                  if (document.fullscreenElement) void document.exitFullscreen();
+                  else void el.requestFullscreen?.();
+                }}
+              />
+            </div>
+          )}
         </section>
+
 
         {libraryOpen && (
           <aside className="w-[340px] shrink-0 border-l border-border/70 p-3 xl:w-[400px]">
