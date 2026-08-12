@@ -91,6 +91,15 @@ function Workstation() {
   const [aspect, setAspect] = useState(16 / 9);
   const [stage, setStage] = useState({ width: 0, height: 0 });
 
+  const [playing, setPlaying] = useState(false);
+  const [current, setCurrent] = useState(0);
+  const [volume, setVolume] = useState(1);
+  const [muted, setMuted] = useState(false);
+  const [rate, setRate] = useState(1);
+  const captureRef = useRef<ScreenCaptureSession | null>(null);
+  const [captureActive, setCaptureActive] = useState(false);
+
+
   const [prefs, setPrefsState] = useState<Prefs>(DEFAULT_PREFS);
   const [keys, setKeysState] = useState<KeyMap>(defaultKeyMap());
   const [tool, setTool] = useState<ToolId>("pen");
