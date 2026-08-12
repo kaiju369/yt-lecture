@@ -110,7 +110,12 @@ interface ToolbarProps {
   onSave: () => void;
   onCancel: () => void;
   onOpenColor: () => void;
+  captureActive: boolean;
+  onToggleCapture: () => void;
+  canDeletePage: boolean;
+  onDeletePage: () => void;
 }
+
 
 function Hotkey({ combo }: { combo?: string | undefined }) {
   if (!combo) return null;
