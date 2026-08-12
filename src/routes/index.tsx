@@ -277,9 +277,10 @@ function Workstation() {
           objects,
           videoEl: playerRef.current?.getVideoElement() ?? null,
           youtubeVideoId: source?.type === "youtube" ? source.videoId : undefined,
-          viewportRect: null,
-          session: null,
+          viewportRect: stageViewportRect(stageRef.current, rect),
+          session: captureRef.current,
         });
+
 
     const page: Page = {
       id: activePage?.id ?? uid(),
