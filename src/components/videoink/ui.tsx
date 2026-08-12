@@ -1112,3 +1112,118 @@ export function SettingsDialog({
     </Dialog>
   );
 }
+
+/* --------------------------- video controls --------------------------- */
+
+export interface VideoControlsProps {
+  playing: boolean;
+  current: number;
+  duration: number;
+  volume: number;
+  muted: boolean;
+  rate: number;
+  disabled?: boolean;
+  onPlayPause: () => void;
+  onSeek: (t: number) => void;
+  onSkip: (delta: number) => void;
+  onVolume: (v: number) => void;
+  onMute: () => void;
+  onRate: (r: number) => void;
+  onFullscreen: () => void;
+}
+
+const RATES = [0.5, 0.75, 1, 1.25, 1.5, 2];
+
+export function VideoControls(p: VideoControlsProps) {
+  return (
+    <div className="pointer-events-auto flex w-full items-center gap-2 rounded-xl border border-border/70 bg-card/95 px-2.5 py-1.5 shadow-lg backdrop-blur">
+      <Button
+        size="sm"
+        variant="secondary"
+        className="size-8 shrink-0 p-0"
+        onClick={p.onPlayPause}
+        disabled={p.disabled}
+        aria-label={p.playing ? "Pause" : "Play"}
+      >
+        {p.playing ? <Pause className="size-4" /> : <Play className="size-4" />}
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="size-8 shrink-0 p-0"
+        onClick={() => p.onSkip(-10)}
+        disabled={p.disabled}
+        aria-label="Back 10 seconds"
+      >
+        <RotateCcw className="size-4" />
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="size-8 shrink-0 p-0"
+        onClick={() => p.onSkip(10)}
+        disabled={p.disabled}
+        aria-label="Forward 10 seconds"
+      >
+        <RotateCw className="size-4" />
+      </Button>
+
+      <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+        {formatTime(p.current)}
+      </span>
+      <Slider
+        className="min-w-16 flex-1"
+        value={[Math.min(p.current, p.duration || 0)]}
+        min={0}
+        max={Math.max(p.duration, 1)}
+        step={0.1}
+        aria-label="Seek"
+        onValueChange={([v]) => p.onSeek(v ?? 0)}
+      />
+      <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
+        {formatTime(p.duration)}
+      </span>
+
+      <Button
+        size="sm"
+        variant="ghost"
+        className="size-8 shrink-0 p-0"
+        onClick={p.onMute}
+        aria-label={p.muted ? "Unmute" : "Mute"}
+      >
+        {p.muted || p.volume === 0 ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
+      </Button>
+      <Slider
+        className="hidden w-20 shrink-0 sm:flex"
+        value={[p.muted ? 0 : p.volume * 100]}
+        min={0}
+        max={100}
+        aria-label="Volume"
+        onValueChange={([v]) => p.onVolume((v ?? 100) / 100)}
+      />
+
+      <Select value={String(p.rate)} onValueChange={(v) => p.onRate(Number(v))}>
+        <SelectTrigger className="h-8 w-[70px] shrink-0 text-xs" aria-label="Playback speed">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {RATES.map((r) => (
+            <SelectItem key={r} value={String(r)}>
+              {r}x
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Button
+        size="sm"
+        variant="ghost"
+        className="size-8 shrink-0 p-0"
+        onClick={p.onFullscreen}
+        aria-label="Fullscreen"
+      >
+        <Maximize className="size-4" />
+      </Button>
+    </div>
+  );
+}
