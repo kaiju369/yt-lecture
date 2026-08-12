@@ -511,22 +511,24 @@ function Workstation() {
         case "customColor":
           setSettingsOpen(true);
           break;
+        case "shape.fill":
+          setPrefs({ shapeFill: !prefs.shapeFill });
+          flashLabel(prefs.shapeFill ? "Fill off" : "Fill on");
+          break;
+        case "capture":
+          void toggleCapture();
+          break;
         case "eraser.cycle":
-          setPrefs({
-            eraserMode:
-              prefs.eraserMode === "stroke"
-                ? "freehand"
-                : prefs.eraserMode === "freehand"
-                  ? "rect"
-                  : prefs.eraserMode === "rect"
-                    ? "circle"
-                    : "stroke",
-          });
+          setPrefs({ eraserMode: prefs.eraserMode === "stroke" ? "freehand" : "stroke" });
           flashLabel("Eraser mode");
           break;
         case "page.blank":
           void addBlankPage();
           break;
+        case "page.delete":
+          void deleteCurrentPage();
+          break;
+
         case "library.toggle":
           setLibraryOpen((v) => !v);
           break;
