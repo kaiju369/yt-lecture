@@ -171,6 +171,51 @@ function Workstation() {
     [stage.width, stage.height, aspect],
   );
 
+  /* -------------------------- playback poll -------------------------- */
+  useEffect(() => {
+    if (!source) return;
+    const t = setInterval(() => {
+      const p = playerRef.current;
+      if (!p) return;
+      setCurrent(p.getCurrentTime());
+      setPlaying(p.isPlaying());
+      const d = p.getDuration();
+      if (d && Number.isFinite(d)) setDuration((prev) => (Math.abs(prev - d) > 0.5 ? d : prev));
+    }, 250);
+    return () => clearInterval(t);
+  }, [source]);
+
+  /* ------------------------- screen capture -------------------------- */
+  const toggleCapture = useCallback(async () => {
+    if (!ScreenCaptureSession.supported) {
+      toast.error("Screen capture is not supported in this browser");
+      return;
+    }
+    if (captureRef.current?.active) {
+      captureRef.current.stop();
+      captureRef.current = null;
+      setCaptureActive(false);
+      toast("Screen capture stopped");
+      return;
+    }
+    const session = new ScreenCaptureSession();
+    try {
+      await session.start(() => {
+        captureRef.current = null;
+        setCaptureActive(false);
+      });
+      captureRef.current = session;
+      setCaptureActive(true);
+      toast.success("Screen capture on — saved pages now keep the real frame");
+    } catch {
+      toast.error("Screen capture permission denied");
+    }
+  }, []);
+
+  useEffect(() => () => captureRef.current?.stop(), []);
+
+
+
   /* --------------------------- recovery ----------------------------- */
   useEffect(() => {
     if (!annotating) return;
