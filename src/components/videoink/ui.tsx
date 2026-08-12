@@ -59,14 +59,13 @@ const TOOL_BUTTONS: { tool: ToolId; action: ActionId; icon: typeof Pen; label: s
   { tool: "pen", action: "tool.pen", icon: Pen, label: "Pen" },
   { tool: "highlighter", action: "tool.highlighter", icon: Highlighter, label: "Highlighter" },
   { tool: "eraser", action: "tool.eraser", icon: Eraser, label: "Eraser" },
-  { tool: "freehandEraser", action: "tool.freehandEraser", icon: SquareDashed, label: "Freehand eraser" },
   { tool: "text", action: "tool.text", icon: Type, label: "Text" },
   { tool: "line", action: "tool.line", icon: Minus, label: "Line" },
   { tool: "arrow", action: "tool.arrow", icon: ArrowUpRight, label: "Arrow" },
   { tool: "shape", action: "tool.shape", icon: Square, label: "Shape" },
   { tool: "lasso", action: "tool.lasso", icon: Lasso, label: "Lasso" },
-  { tool: "move", action: "tool.move", icon: Move, label: "Move" },
 ];
+
 
 export const SHAPE_KINDS: ShapeKind[] = [
   "line",
