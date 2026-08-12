@@ -58,6 +58,17 @@ import {
   type ToolId,
 } from "@/lib/videoink/types";
 
+/** Viewport rectangle of the visible video content, for screen-capture cropping. */
+function stageViewportRect(
+  el: HTMLDivElement | null,
+  rect: { left: number; top: number; width: number; height: number },
+): DOMRect | null {
+  if (!el || !rect.width || !rect.height) return null;
+  const box = el.getBoundingClientRect();
+  return new DOMRect(box.left + rect.left, box.top + rect.top, rect.width, rect.height);
+}
+
+
 export const Route = createFileRoute("/")({
   component: Workstation,
   head: () => ({
