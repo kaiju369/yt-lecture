@@ -14,6 +14,7 @@ import {
   SettingsDialog,
   TextEditorOverlay,
   ToolIndicator,
+  VideoControls,
   type ExportRequest,
 } from "@/components/videoink/ui";
 import { computeContentRect } from "@/lib/videoink/geometry";
@@ -27,9 +28,10 @@ import {
   putPages,
   saveRecovery,
 } from "@/lib/videoink/db";
-import { captureSnapshot } from "@/lib/videoink/capture";
+import { ScreenCaptureSession, captureSnapshot } from "@/lib/videoink/capture";
 import { makeThumbnail } from "@/lib/videoink/render";
 import { exportPages, type ExportHandle } from "@/lib/videoink/export";
+
 import {
   DEFAULT_PREFS,
   applyTemplate,
