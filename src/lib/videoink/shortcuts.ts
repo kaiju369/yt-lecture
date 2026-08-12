@@ -7,17 +7,15 @@ export type ActionId =
   | "tool.line"
   | "tool.arrow"
   | "tool.shape"
-  | "tool.freehandEraser"
-  | "tool.rectEraser"
-  | "tool.circleEraser"
   | "tool.lasso"
-  | "tool.move"
   | "annotate"
   | "save"
   | "undo"
   | "redo"
   | "clear"
   | "customColor"
+  | "shape.fill"
+  | "capture"
   | "size.fine"
   | "size.medium"
   | "size.bold"
@@ -35,6 +33,7 @@ export type ActionId =
   | "selectAll"
   | "eraser.cycle"
   | "page.blank"
+  | "page.delete"
   | "page.next"
   | "page.prev"
   | "library.toggle"
@@ -42,6 +41,7 @@ export type ActionId =
   | "settings"
   | "cancel"
   | "playPause";
+
 
 export interface ActionDef {
   id: ActionId;
