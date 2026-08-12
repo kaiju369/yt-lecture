@@ -214,6 +214,42 @@ export function InkToolbar(p: ToolbarProps) {
 
       <span className="mx-1 h-6 w-px bg-border" />
 
+      <Button
+        size="sm"
+        variant={p.prefs.shapeFill ? "secondary" : "ghost"}
+        className="gap-1 px-2"
+        title="Fill shapes"
+        onClick={() => p.setPrefs({ shapeFill: !p.prefs.shapeFill })}
+      >
+        <PaintBucket className="size-4" />
+        <Hotkey combo={p.keys["shape.fill"]} />
+      </Button>
+      <Button
+        size="sm"
+        variant={p.captureActive ? "secondary" : "ghost"}
+        className="gap-1 px-2"
+        title={p.captureActive ? "Screen capture on — click to stop" : "Enable screen capture for real frames"}
+        onClick={p.onToggleCapture}
+      >
+        <MonitorUp className="size-4" />
+        <Hotkey combo={p.keys["capture"]} />
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="gap-1 px-2 text-destructive"
+        title="Delete this page"
+        disabled={!p.canDeletePage}
+        onClick={p.onDeletePage}
+      >
+        <FileX2 className="size-4" />
+        <Hotkey combo={p.keys["page.delete"]} />
+      </Button>
+
+      <span className="mx-1 h-6 w-px bg-border" />
+
+
+
       <Button size="sm" variant="ghost" disabled={!p.canUndo} onClick={p.onUndo} className="gap-1 px-2">
         <Undo2 className="size-4" />
         <Hotkey combo={p.keys["undo"]} />
