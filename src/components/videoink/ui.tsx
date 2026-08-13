@@ -624,11 +624,11 @@ export function PageLibrary(p: LibraryProps) {
                   {a.videoTitle ?? "—"} · {a.snapshot?.status ?? "unavailable"}
                 </p>
               )}
-              <div className="mt-1 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="mt-1.5 flex flex-wrap gap-1">
                 <Button
                   size="sm"
                   variant="secondary"
-                  className="h-6 px-2 text-[11px]"
+                  className="h-7 px-2 text-[11px]"
                   onClick={(e) => {
                     e.stopPropagation();
                     p.onEnlarge(a);
@@ -638,8 +638,8 @@ export function PageLibrary(p: LibraryProps) {
                 </Button>
                 <Button
                   size="sm"
-                  variant="ghost"
-                  className="h-6 px-2 text-[11px]"
+                  variant={p.selection.includes(a.id) ? "secondary" : "outline"}
+                  className="h-7 px-2 text-[11px]"
                   onClick={(e) => {
                     e.stopPropagation();
                     toggle(a.id, true);
@@ -650,7 +650,19 @@ export function PageLibrary(p: LibraryProps) {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-6 px-2 text-[11px]"
+                  className="h-7 px-2 text-[11px]"
+                  title="Duplicate page"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    p.onDuplicate([a.id]);
+                  }}
+                >
+                  Copy
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 px-2 text-[11px] text-destructive"
                   onClick={(e) => {
                     e.stopPropagation();
                     p.onDelete([a.id]);
