@@ -11,6 +11,7 @@ import {
   MonitorUp,
   MousePointer2,
   PaintBucket,
+  Wand2,
   Pause,
   Pen,
   Play,
