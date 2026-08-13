@@ -128,7 +128,7 @@ function Hotkey({ combo }: { combo?: string | undefined }) {
 
 export function InkToolbar(p: ToolbarProps) {
   return (
-    <div className="pointer-events-auto flex max-w-full flex-wrap items-center gap-1 overflow-x-auto rounded-xl border border-border/70 bg-card/95 px-2 py-1.5 shadow-lg backdrop-blur">
+    <div className="pointer-events-auto flex max-w-full flex-nowrap items-center gap-1 overflow-x-auto rounded-xl border border-border/70 bg-card/95 px-2 py-1.5 shadow-lg backdrop-blur md:flex-wrap md:overflow-visible">
       {TOOL_BUTTONS.map((t) => (
         <Button
           key={t.tool}
@@ -217,12 +217,25 @@ export function InkToolbar(p: ToolbarProps) {
       <Button
         size="sm"
         variant={p.prefs.shapeFill ? "secondary" : "ghost"}
-        className="gap-1 px-2"
+        className="shrink-0 gap-1 px-2"
         title="Fill shapes"
         onClick={() => p.setPrefs({ shapeFill: !p.prefs.shapeFill })}
       >
         <PaintBucket className="size-4" />
         <Hotkey combo={p.keys["shape.fill"]} />
+      </Button>
+      <Button
+        size="sm"
+        variant={p.prefs.recognize ? "secondary" : "ghost"}
+        className="shrink-0 gap-1 px-2"
+        title={
+          p.prefs.recognize
+            ? "Shape recognition on — freehand rectangles, circles, lines and arrows snap to shapes"
+            : "Turn on shape recognition"
+        }
+        onClick={() => p.setPrefs({ recognize: !p.prefs.recognize })}
+      >
+        <Wand2 className="size-4" />
       </Button>
       <Button
         size="sm"
