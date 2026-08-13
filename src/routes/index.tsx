@@ -839,7 +839,22 @@ function Workstation() {
 
 
         {libraryOpen && (
-          <aside className="w-[340px] shrink-0 border-l border-border/70 p-3 xl:w-[400px]">
+          <div
+            className="fixed inset-0 z-30 bg-background/70 backdrop-blur-sm lg:hidden"
+            onClick={() => setLibraryOpen(false)}
+            aria-hidden
+          />
+        )}
+        {libraryOpen && (
+          <aside className="fixed inset-y-0 right-0 z-40 flex w-[92vw] max-w-[380px] flex-col border-l border-border/70 bg-background p-3 lg:static lg:z-auto lg:w-[340px] lg:max-w-none lg:shrink-0 xl:w-[400px]">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="mb-1 self-end lg:hidden"
+              onClick={() => setLibraryOpen(false)}
+            >
+              Close
+            </Button>
             <PageLibrary
               pages={pages}
               currentSourceKey={sourceKey(source) ?? null}
