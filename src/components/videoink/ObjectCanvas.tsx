@@ -17,7 +17,8 @@ import {
 } from "@/lib/videoink/objects";
 import { drawObject } from "@/lib/videoink/objects";
 import { recognizeShape } from "@/lib/videoink/recognize";
-import { pressureFactor, type Prefs } from "@/lib/videoink/prefs";
+import { InkFilter, smoothStroke } from "@/lib/videoink/smooth";
+import { pressureThinning, type Prefs } from "@/lib/videoink/prefs";
 import {
   uid,
   type InkPoint,
@@ -73,6 +74,7 @@ export function ObjectCanvas({
   const liveRef = useRef<HTMLCanvasElement>(null);
   const drag = useRef<Drag | null>(null);
   const raf = useRef<number | null>(null);
+  const filter = useRef(new InkFilter(0.5));
   const [, force] = useState(0);
 
   const { objects, selection } = editor;
@@ -215,7 +217,7 @@ export function ObjectCanvas({
     const box = liveRef.current!.getBoundingClientRect();
     const x = (e.clientX - box.left - rect.left) / rect.width;
     const y = (e.clientY - box.top - rect.top) / rect.height;
-    const real = e.pointerType === "pen" && e.pressure > 0 && e.pressure !== 0.5;
+    const real = e.pointerType === "pen" && e.pressure > 0;
     return { x, y, pressure: real ? e.pressure : 0.5 };
   };
 
@@ -335,10 +337,12 @@ export function ObjectCanvas({
       return;
     }
 
+    filter.current = new InkFilter(prefs.smoothing);
+    const seed = filter.current.push(p, true) ?? p;
     drag.current = {
       mode: "ink",
       id: e.pointerId,
-      points: [p],
+      points: [seed],
       pressureMode: e.pointerType === "pen" && e.pressure > 0 ? "real" : "simulated",
     };
     schedule();
@@ -352,17 +356,22 @@ export function ObjectCanvas({
 
     switch (d.mode) {
       case "ink": {
+        // Consume every coalesced sample the OS buffered: this is what keeps
+        // fast stylus strokes from turning into polygons.
         const coalesced = e.nativeEvent.getCoalescedEvents?.() ?? [];
-        if (coalesced.length > 1) {
-          const box = liveRef.current!.getBoundingClientRect();
-          for (const ev of coalesced) {
-            d.points.push({
-              x: (ev.clientX - box.left - rect.left) / rect.width,
-              y: (ev.clientY - box.top - rect.top) / rect.height,
-              pressure: d.pressureMode === "real" && ev.pressure > 0 ? ev.pressure : 0.5,
-            });
-          }
-        } else d.points.push(p);
+        const box = liveRef.current!.getBoundingClientRect();
+        const samples: InkPoint[] =
+          coalesced.length > 1
+            ? coalesced.map((ev) => ({
+                x: (ev.clientX - box.left - rect.left) / rect.width,
+                y: (ev.clientY - box.top - rect.top) / rect.height,
+                pressure: d.pressureMode === "real" && ev.pressure > 0 ? ev.pressure : 0.5,
+              }))
+            : [p];
+        for (const s of samples) {
+          const f = filter.current.push(s);
+          if (f) d.points.push(f);
+        }
         schedule();
         break;
       }
@@ -425,9 +434,10 @@ export function ObjectCanvas({
     }
 
     if (d.mode === "ink" && d.points.length) {
-      const stroke = makeStroke(d.points, d.pressureMode, tool, prefs, 0);
+      const raw = makeStroke(d.points, d.pressureMode, tool, prefs, 0);
+      const stroke = { ...raw, points: smoothStroke(d.points, prefs.smoothing) };
       if (prefs.recognize && tool === "pen") {
-        const rec = recognizeShape(stroke);
+        const rec = recognizeShape(raw);
         if (rec) {
           editor.add(makeShapeFrom(rec.shape, rec.a, rec.b, prefs, stroke.color, stroke.size));
           onRecognized?.(rec.shape);
@@ -517,7 +527,7 @@ export function ObjectCanvas({
         onPointerMove={onPointerMove}
         onPointerUp={finish}
         onPointerCancel={finish}
-        onPointerLeave={finish}
+        onLostPointerCapture={finish}
         onDoubleClick={(e) => {
           if (!enabled) return;
           const box = liveRef.current!.getBoundingClientRect();
@@ -597,12 +607,6 @@ export function makeStroke(
 ): Stroke {
   const highlighter = tool === "highlighter";
   const base = highlighter ? prefs.highlighterSize : prefs.penSize;
-  const avgPressure =
-    points.reduce((s, p) => s + p.pressure, 0) / Math.max(1, points.length);
-  const factor =
-    pressureMode === "real" && !highlighter
-      ? pressureFactor(prefs.pressure, avgPressure)
-      : 1;
   return {
     kind: "stroke",
     id: uid(),
@@ -611,8 +615,12 @@ export function makeStroke(
     tool: highlighter ? "highlighter" : "pen",
     color: highlighter ? prefs.highlighterColor : prefs.penColor,
     opacity: highlighter ? prefs.highlighterOpacity : 1,
-    size: Math.max(0.0008, base * factor),
+    size: Math.max(0.0008, base),
     pressureMode,
+    // Pressure now modulates width per point instead of scaling the whole
+    // stroke, which is what makes stylus input feel real.
+    thinning: highlighter ? 0 : pressureThinning(prefs.pressure),
+    smoothing: 0.45 + 0.4 * prefs.smoothing,
     points,
   };
 }

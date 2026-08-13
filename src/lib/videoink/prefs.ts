@@ -170,6 +170,23 @@ export function pressureFactor(level: PressureLevel, pressure: number): number {
   return 1 - amount + amount * (pressure * 2);
 }
 
+/**
+ * How strongly stylus pressure modulates stroke width (perfect-freehand
+ * `thinning`). Applied per point, not as a whole-stroke scale factor.
+ */
+export function pressureThinning(level: PressureLevel): number {
+  switch (level) {
+    case "off":
+      return 0;
+    case "low":
+      return 0.25;
+    case "high":
+      return 0.72;
+    default:
+      return 0.48;
+  }
+}
+
 export function sanitizeFilename(name: string): string {
   return name.replace(/[\\/:*?"<>|]+/g, "_").replace(/\s+/g, "_").slice(0, 120) || "VideoInk";
 }
