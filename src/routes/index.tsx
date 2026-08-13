@@ -143,7 +143,7 @@ function Workstation() {
 
   const [pages, setPages] = useState<Page[]>([]);
   const [librarySelection, setLibrarySelection] = useState<string[]>([]);
-  const [libraryOpen, setLibraryOpen] = useState(true);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [exportProgress, setExportProgress] = useState<string | null>(null);
@@ -171,6 +171,11 @@ function Workstation() {
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* Library is docked on large screens, an overlay drawer on small ones. */
+  useEffect(() => {
+    if (window.innerWidth >= 1024) setLibraryOpen(true);
   }, []);
 
   const setPrefs = useCallback((patch: Partial<Prefs>) => {
