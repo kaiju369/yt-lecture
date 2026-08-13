@@ -11,6 +11,7 @@ import {
   MonitorUp,
   MousePointer2,
   PaintBucket,
+  Wand2,
   Pause,
   Pen,
   Play,
@@ -128,7 +129,7 @@ function Hotkey({ combo }: { combo?: string | undefined }) {
 
 export function InkToolbar(p: ToolbarProps) {
   return (
-    <div className="pointer-events-auto flex max-w-full flex-wrap items-center gap-1 overflow-x-auto rounded-xl border border-border/70 bg-card/95 px-2 py-1.5 shadow-lg backdrop-blur">
+    <div className="pointer-events-auto flex max-w-full flex-nowrap items-center gap-1 overflow-x-auto rounded-xl border border-border/70 bg-card/95 px-2 py-1.5 shadow-lg backdrop-blur md:flex-wrap md:overflow-visible">
       {TOOL_BUTTONS.map((t) => (
         <Button
           key={t.tool}
@@ -217,12 +218,25 @@ export function InkToolbar(p: ToolbarProps) {
       <Button
         size="sm"
         variant={p.prefs.shapeFill ? "secondary" : "ghost"}
-        className="gap-1 px-2"
+        className="shrink-0 gap-1 px-2"
         title="Fill shapes"
         onClick={() => p.setPrefs({ shapeFill: !p.prefs.shapeFill })}
       >
         <PaintBucket className="size-4" />
         <Hotkey combo={p.keys["shape.fill"]} />
+      </Button>
+      <Button
+        size="sm"
+        variant={p.prefs.recognize ? "secondary" : "ghost"}
+        className="shrink-0 gap-1 px-2"
+        title={
+          p.prefs.recognize
+            ? "Shape recognition on — freehand rectangles, circles, lines and arrows snap to shapes"
+            : "Turn on shape recognition"
+        }
+        onClick={() => p.setPrefs({ recognize: !p.prefs.recognize })}
+      >
+        <Wand2 className="size-4" />
       </Button>
       <Button
         size="sm"
@@ -447,9 +461,9 @@ export function PageLibrary(p: LibraryProps) {
 
   const gridClass =
     p.view === "smallGrid"
-      ? "grid grid-cols-2 gap-2 xl:grid-cols-3"
+      ? "grid grid-cols-2 gap-2"
       : p.view === "largeGrid"
-        ? "grid grid-cols-1 gap-3 xl:grid-cols-2"
+        ? "grid grid-cols-1 gap-3"
         : "flex flex-col gap-1.5";
 
   return (
@@ -589,16 +603,17 @@ export function PageLibrary(p: LibraryProps) {
           >
             <div
               className={cn(
-                "relative aspect-video shrink-0 overflow-hidden rounded bg-muted",
-                p.view === "list" ? "w-24" : p.view === "detail" ? "w-40" : "w-full",
+                "relative shrink-0 overflow-hidden rounded bg-muted",
+                p.view === "list" ? "w-20" : p.view === "detail" ? "w-28" : "w-full",
               )}
+              style={{ aspectRatio: String(a.aspectRatio || 16 / 9) }}
             >
               {a.thumbnail || a.snapshot?.dataUrl ? (
                 <img
                   src={a.thumbnail ?? a.snapshot?.dataUrl}
                   alt={a.title}
                   loading="lazy"
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-contain"
                 />
               ) : (
                 <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
@@ -623,11 +638,11 @@ export function PageLibrary(p: LibraryProps) {
                   {a.videoTitle ?? "—"} · {a.snapshot?.status ?? "unavailable"}
                 </p>
               )}
-              <div className="mt-1 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+              <div className="mt-1.5 flex flex-wrap gap-1">
                 <Button
                   size="sm"
                   variant="secondary"
-                  className="h-6 px-2 text-[11px]"
+                  className="h-7 px-2 text-[11px]"
                   onClick={(e) => {
                     e.stopPropagation();
                     p.onEnlarge(a);
@@ -637,8 +652,8 @@ export function PageLibrary(p: LibraryProps) {
                 </Button>
                 <Button
                   size="sm"
-                  variant="ghost"
-                  className="h-6 px-2 text-[11px]"
+                  variant={p.selection.includes(a.id) ? "secondary" : "outline"}
+                  className="h-7 px-2 text-[11px]"
                   onClick={(e) => {
                     e.stopPropagation();
                     toggle(a.id, true);
@@ -649,7 +664,19 @@ export function PageLibrary(p: LibraryProps) {
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-6 px-2 text-[11px]"
+                  className="h-7 px-2 text-[11px]"
+                  title="Duplicate page"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    p.onDuplicate([a.id]);
+                  }}
+                >
+                  Copy
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 px-2 text-[11px] text-destructive"
                   onClick={(e) => {
                     e.stopPropagation();
                     p.onDelete([a.id]);

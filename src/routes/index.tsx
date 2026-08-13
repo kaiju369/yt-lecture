@@ -1,7 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { PanelRightClose, PanelRightOpen, Settings2, Download, Upload } from "lucide-react";
+import {
+  Download,
+  MonitorUp,
+  PanelRightClose,
+  PanelRightOpen,
+  Settings2,
+  Upload,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Player, type PlayerHandle, type PlayerSource } from "@/components/videoink/Player";
@@ -34,6 +41,7 @@ import { exportPages, type ExportHandle } from "@/lib/videoink/export";
 
 import {
   DEFAULT_PREFS,
+  PEN_PRESETS,
   applyTemplate,
   loadPrefs,
   savePrefs,
@@ -57,6 +65,19 @@ import {
   type TextObject,
   type ToolId,
 } from "@/lib/videoink/types";
+
+/** Tool order used by the previous/next tool hotkeys. */
+const TOOL_CYCLE: ToolId[] = [
+  "select",
+  "pen",
+  "highlighter",
+  "eraser",
+  "text",
+  "line",
+  "arrow",
+  "shape",
+  "lasso",
+];
 
 /** Viewport rectangle of the visible video content, for screen-capture cropping. */
 function stageViewportRect(
@@ -122,7 +143,7 @@ function Workstation() {
 
   const [pages, setPages] = useState<Page[]>([]);
   const [librarySelection, setLibrarySelection] = useState<string[]>([]);
-  const [libraryOpen, setLibraryOpen] = useState(true);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [exportProgress, setExportProgress] = useState<string | null>(null);
@@ -150,6 +171,11 @@ function Workstation() {
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* Library is docked on large screens, an overlay drawer on small ones. */
+  useEffect(() => {
+    if (window.innerWidth >= 1024) setLibraryOpen(true);
   }, []);
 
   const setPrefs = useCallback((patch: Partial<Prefs>) => {
@@ -470,10 +496,23 @@ function Workstation() {
       const action = actionForCombo(keys, eventCombo(e));
       if (!action) return;
       e.preventDefault();
-      if (action.startsWith("tool.")) {
+      if (action.startsWith("tool.") && !["tool.prev", "tool.next", "tool.reset"].includes(action)) {
         const id = action.slice(5) as ToolId;
         setTool(id);
         flashLabel(id);
+        return;
+      }
+      if (action === "tool.prev" || action === "tool.next") {
+        const i = TOOL_CYCLE.indexOf(tool);
+        const n = TOOL_CYCLE.length;
+        const next = TOOL_CYCLE[(((action === "tool.next" ? i + 1 : i - 1) % n) + n) % n]!;
+        setTool(next);
+        flashLabel(next);
+        return;
+      }
+      if (action === "tool.reset") {
+        setTool("pen");
+        flashLabel("pen");
         return;
       }
       switch (action) {
@@ -508,17 +547,18 @@ function Workstation() {
           editor.selectAll();
           break;
         case "size.fine":
-          setPrefs({ penSize: 0.005 });
-          flashLabel("Fine");
-          break;
         case "size.medium":
-          setPrefs({ penSize: 0.009 });
-          flashLabel("Medium");
+        case "size.bold": {
+          const preset =
+            PEN_PRESETS[action === "size.fine" ? 0 : action === "size.medium" ? 1 : 2]!;
+          setPrefs(
+            tool === "highlighter"
+              ? { highlighterSize: preset.size * 1.6 }
+              : { penSize: preset.size },
+          );
+          flashLabel(preset.label);
           break;
-        case "size.bold":
-          setPrefs({ penSize: 0.016 });
-          flashLabel("Bold");
-          break;
+        }
         case "customColor":
           setSettingsOpen(true);
           break;
@@ -568,6 +608,7 @@ function Workstation() {
   }, [
     keys,
     editor,
+    tool,
     prefs.eraserMode,
     prefs.shapeFill,
     annotating,
@@ -643,6 +684,20 @@ function Workstation() {
             />
           </label>
         </div>
+        <Button
+          size="sm"
+          variant={captureActive ? "secondary" : "outline"}
+          onClick={() => void toggleCapture()}
+          className="gap-1.5"
+          title={
+            captureActive
+              ? "Screen capture is on — click to stop sharing"
+              : "Grant screen capture so saved pages keep the real video frame"
+          }
+        >
+          <MonitorUp className="size-4" />
+          {captureActive ? "Capture on" : "Allow capture"}
+        </Button>
         <Button size="sm" variant="ghost" onClick={() => setExportOpen(true)} className="gap-1.5">
           <Download className="size-4" /> Export
         </Button>
@@ -660,6 +715,7 @@ function Workstation() {
             <Player
               ref={playerRef}
               source={source}
+              fit={rect}
               onReady={(info) => {
                 setDuration(info.duration);
                 setVideoTitle(info.title);
@@ -788,7 +844,22 @@ function Workstation() {
 
 
         {libraryOpen && (
-          <aside className="w-[340px] shrink-0 border-l border-border/70 p-3 xl:w-[400px]">
+          <div
+            className="fixed inset-0 z-30 bg-background/70 backdrop-blur-sm lg:hidden"
+            onClick={() => setLibraryOpen(false)}
+            aria-hidden
+          />
+        )}
+        {libraryOpen && (
+          <aside className="fixed inset-y-0 right-0 z-40 flex w-[92vw] max-w-[380px] flex-col border-l border-border/70 bg-background p-3 lg:static lg:z-auto lg:w-[340px] lg:max-w-none lg:shrink-0 xl:w-[400px]">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="mb-1 self-end lg:hidden"
+              onClick={() => setLibraryOpen(false)}
+            >
+              Close
+            </Button>
             <PageLibrary
               pages={pages}
               currentSourceKey={sourceKey(source) ?? null}

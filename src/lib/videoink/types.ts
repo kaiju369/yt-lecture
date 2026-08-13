@@ -72,6 +72,10 @@ export interface Stroke extends ObjectBase {
   /** normalized size: fraction of the video content height */
   size: number;
   pressureMode: "real" | "simulated";
+  /** perfect-freehand thinning (0..1); derived from the pressure setting */
+  thinning?: number | undefined;
+  /** extra outline smoothing (0..1) */
+  smoothing?: number | undefined;
   points: InkPoint[];
 }
 

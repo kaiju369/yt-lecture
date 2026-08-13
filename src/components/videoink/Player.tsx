@@ -46,12 +46,14 @@ interface YTPlayer {
 
 interface Props {
   source: PlayerSource | null;
+  /** exact pixel rect of the visible video content, so the iframe matches the ink layer */
+  fit?: { left: number; top: number; width: number; height: number } | undefined;
   onReady?: (info: { duration: number; title: string; aspect: number }) => void;
   onPlayStateChange?: (playing: boolean) => void;
 }
 
 export const Player = forwardRef<PlayerHandle, Props>(function Player(
-  { source, onReady, onPlayStateChange },
+  { source, fit, onReady, onPlayStateChange },
   ref,
 ) {
   const ytHostRef = useRef<HTMLDivElement>(null);
@@ -161,11 +163,19 @@ export const Player = forwardRef<PlayerHandle, Props>(function Player(
   if (!source) return null;
 
   if (source.type === "youtube") {
+    const box =
+      fit && fit.width > 0 && fit.height > 0
+        ? { left: fit.left, top: fit.top, width: fit.width, height: fit.height }
+        : null;
     return (
-      <div className="absolute inset-0 flex items-center justify-center">
+      <div className="absolute inset-0">
         <div
-          className="pointer-events-none"
-          style={{ width: "100%", aspectRatio: "16 / 9", maxHeight: "100%" }}
+          className="pointer-events-none absolute"
+          style={
+            box
+              ? { left: box.left, top: box.top, width: box.width, height: box.height }
+              : { inset: 0 }
+          }
         >
           <div ref={ytHostRef} className="h-full w-full" />
         </div>
