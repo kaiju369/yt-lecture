@@ -589,16 +589,17 @@ export function PageLibrary(p: LibraryProps) {
           >
             <div
               className={cn(
-                "relative aspect-video shrink-0 overflow-hidden rounded bg-muted",
-                p.view === "list" ? "w-24" : p.view === "detail" ? "w-40" : "w-full",
+                "relative shrink-0 overflow-hidden rounded bg-muted",
+                p.view === "list" ? "w-20" : p.view === "detail" ? "w-28" : "w-full",
               )}
+              style={{ aspectRatio: String(a.aspectRatio || 16 / 9) }}
             >
               {a.thumbnail || a.snapshot?.dataUrl ? (
                 <img
                   src={a.thumbnail ?? a.snapshot?.dataUrl}
                   alt={a.title}
                   loading="lazy"
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-contain"
                 />
               ) : (
                 <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
