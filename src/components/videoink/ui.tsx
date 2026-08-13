@@ -447,9 +447,9 @@ export function PageLibrary(p: LibraryProps) {
 
   const gridClass =
     p.view === "smallGrid"
-      ? "grid grid-cols-2 gap-2 xl:grid-cols-3"
+      ? "grid grid-cols-2 gap-2"
       : p.view === "largeGrid"
-        ? "grid grid-cols-1 gap-3 xl:grid-cols-2"
+        ? "grid grid-cols-1 gap-3"
         : "flex flex-col gap-1.5";
 
   return (
