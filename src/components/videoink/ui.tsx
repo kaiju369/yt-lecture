@@ -461,9 +461,9 @@ export function PageLibrary(p: LibraryProps) {
 
   const gridClass =
     p.view === "smallGrid"
-      ? "grid grid-cols-2 gap-2"
+      ? "grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] content-start gap-2"
       : p.view === "largeGrid"
-        ? "grid grid-cols-1 gap-3"
+        ? "grid grid-cols-[repeat(auto-fill,minmax(230px,1fr))] content-start gap-3"
         : "flex flex-col gap-1.5";
 
   return (
@@ -597,7 +597,7 @@ export function PageLibrary(p: LibraryProps) {
               "group cursor-pointer rounded-lg border border-border/70 bg-card p-2 transition-colors hover:border-ring/60",
               p.activeId === a.id && "border-ring ring-1 ring-ring/40",
               p.selection.includes(a.id) && "bg-primary/10",
-              p.view === "list" || p.view === "detail" ? "flex gap-2.5" : "",
+              p.view === "list" || p.view === "detail" ? "flex gap-2.5" : "flex flex-col",
             )}
             onClick={(e) => (e.shiftKey || e.metaKey || e.ctrlKey ? toggle(a.id, true) : p.onOpen(a))}
           >

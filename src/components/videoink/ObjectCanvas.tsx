@@ -127,7 +127,14 @@ export function ObjectCanvas({
     const d = drag.current;
 
     if (d?.mode === "ink" && d.points.length) {
-      drawObject(ctx, makeStroke(d.points, d.pressureMode, tool, prefs, 0), rect);
+      // Use the exact same sampling pipeline as the committed stroke, so the
+      // ink never "jumps" bolder / thinner the moment the pen lifts.
+      const raw = makeStroke(d.points, d.pressureMode, tool, prefs, 0);
+      drawObject(
+        ctx,
+        { ...raw, points: smoothStroke(d.points, prefs.smoothing) },
+        rect,
+      );
     }
     if (d?.mode === "shape") {
       drawObject(ctx, makeShape(d.a, d.b, tool, prefs, 0), rect);
@@ -506,15 +513,54 @@ export function ObjectCanvas({
     renderLive();
   };
 
-  const cursor = !enabled
-    ? "default"
-    : tool === "select" || tool === "move"
-      ? "move"
-      : ERASERS.includes(tool)
-        ? "cell"
-        : tool === "text"
-          ? "text"
-          : "crosshair";
+  /** Live cursor that previews the real nib / eraser diameter and colour. */
+  const cursor = useMemo(() => {
+    if (!enabled) return "default";
+    if (tool === "select" || tool === "lasso" || tool === "move") return "default";
+    if (tool === "text") return "text";
+
+    const h = rect.height || 1;
+    let diameter: number;
+    let color: string;
+    let filled = false;
+    if (ERASERS.includes(tool)) {
+      diameter = prefs.eraserSize * h * 2;
+      color = "#f5f1e8";
+    } else if (tool === "highlighter") {
+      diameter = prefs.highlighterSize * h * 3.2;
+      color = prefs.highlighterColor;
+      filled = true;
+    } else if (tool === "pen") {
+      diameter = prefs.penSize * h;
+      color = prefs.penColor;
+      filled = true;
+    } else {
+      diameter = prefs.shapeSize * h;
+      color = prefs.penColor;
+    }
+
+    const d = Math.max(6, Math.min(96, diameter));
+    const s = d + 8;
+    const c = s / 2;
+    const r = d / 2;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 ${s} ${s}">
+      <circle cx="${c}" cy="${c}" r="${r}" fill="${filled ? color + "55" : "none"}" stroke="rgba(0,0,0,0.75)" stroke-width="2.5"/>
+      <circle cx="${c}" cy="${c}" r="${r}" fill="none" stroke="${color}" stroke-width="1.25"/>
+      <circle cx="${c}" cy="${c}" r="1" fill="${color}"/>
+    </svg>`;
+    const url = `data:image/svg+xml;base64,${btoa(svg)}`;
+    return `url("${url}") ${Math.round(c)} ${Math.round(c)}, crosshair`;
+  }, [
+    enabled,
+    tool,
+    rect.height,
+    prefs.penSize,
+    prefs.penColor,
+    prefs.highlighterSize,
+    prefs.highlighterColor,
+    prefs.eraserSize,
+    prefs.shapeSize,
+  ]);
 
   return (
     <div className="absolute inset-0" style={{ touchAction: enabled ? "none" : "auto" }}>
