@@ -1,5 +1,4 @@
 import type { ContentRect } from "./geometry";
-import { renderObjects } from "./objects";
 import type { PageObject, SnapshotInfo } from "./types";
 import { youtubeThumbnail } from "./youtube";
 
@@ -13,10 +12,6 @@ function makeCanvas(rect: ContentRect) {
   const ctx = canvas.getContext("2d")!;
   ctx.scale(scale, scale);
   return { canvas, ctx, scale };
-}
-
-function inkRect(rect: ContentRect): ContentRect {
-  return { left: 0, top: 0, width: rect.width, height: rect.height };
 }
 
 function toDataUrl(canvas: HTMLCanvasElement): string | null {
@@ -113,15 +108,13 @@ export interface CaptureContext {
 }
 
 export async function captureSnapshot(ctxIn: CaptureContext): Promise<SnapshotInfo> {
-  const { rect, objects, videoEl, youtubeVideoId, viewportRect, session } = ctxIn;
+  const { rect, videoEl, youtubeVideoId, viewportRect, session } = ctxIn;
   const { canvas, ctx } = makeCanvas(rect);
-  const target = inkRect(rect);
 
   // 1. Direct HTML5 video frame capture.
   if (videoEl && videoEl.videoWidth) {
     try {
       ctx.drawImage(videoEl, 0, 0, rect.width, rect.height);
-      renderObjects(ctx, objects, target);
       const dataUrl = toDataUrl(canvas);
       if (dataUrl) {
         return {
@@ -130,6 +123,7 @@ export async function captureSnapshot(ctxIn: CaptureContext): Promise<SnapshotIn
           width: canvas.width,
           height: canvas.height,
           captureMethod: "html5-video",
+          inkBaked: false,
         };
       }
     } catch {
@@ -148,6 +142,7 @@ export async function captureSnapshot(ctxIn: CaptureContext): Promise<SnapshotIn
         width: grabbed.width,
         height: grabbed.height,
         captureMethod: "html5-video",
+          inkBaked: false,
       };
     }
   }
@@ -157,7 +152,6 @@ export async function captureSnapshot(ctxIn: CaptureContext): Promise<SnapshotIn
     try {
       const img = await loadImage(youtubeThumbnail(youtubeVideoId));
       ctx.drawImage(img, 0, 0, rect.width, rect.height);
-      renderObjects(ctx, objects, target);
       const dataUrl = toDataUrl(canvas);
       if (dataUrl) {
         return {
@@ -166,6 +160,7 @@ export async function captureSnapshot(ctxIn: CaptureContext): Promise<SnapshotIn
           width: canvas.width,
           height: canvas.height,
           captureMethod: "youtube-thumbnail",
+          inkBaked: false,
         };
       }
     } catch {
@@ -178,7 +173,6 @@ export async function captureSnapshot(ctxIn: CaptureContext): Promise<SnapshotIn
     ctx.clearRect(0, 0, rect.width, rect.height);
     ctx.fillStyle = "#11100e";
     ctx.fillRect(0, 0, rect.width, rect.height);
-    renderObjects(ctx, objects, target);
     const dataUrl = toDataUrl(canvas);
     if (dataUrl) {
       return {
@@ -187,6 +181,7 @@ export async function captureSnapshot(ctxIn: CaptureContext): Promise<SnapshotIn
         width: canvas.width,
         height: canvas.height,
         captureMethod: "ink-only",
+        inkBaked: false,
       };
     }
   } catch {
