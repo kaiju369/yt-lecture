@@ -142,7 +142,8 @@ export async function captureSnapshot(ctxIn: CaptureContext): Promise<SnapshotIn
         width: grabbed.width,
         height: grabbed.height,
         captureMethod: "html5-video",
-          inkBaked: false,
+        // The screen grab already contains the on-screen ink.
+        inkBaked: true,
       };
     }
   }
