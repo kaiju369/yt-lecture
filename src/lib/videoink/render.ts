@@ -59,7 +59,12 @@ export async function renderPageToCanvas(
     }
   }
 
-  renderObjects(ctx, page.objects ?? [], { left: 0, top: 0, width, height });
+  // Legacy snapshots (inkBaked !== false) already contain the flattened ink —
+  // drawing the objects again would double every stroke in the export.
+  const baked = src && page.type === "video" && page.snapshot?.inkBaked !== false;
+  if (!baked) {
+    renderObjects(ctx, page.objects ?? [], { left: 0, top: 0, width, height });
+  }
   return canvas;
 }
 
