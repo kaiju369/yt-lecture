@@ -124,6 +124,12 @@ export interface SnapshotInfo {
   width?: number | undefined;
   height?: number | undefined;
   captureMethod?: "html5-video" | "youtube-thumbnail" | "ink-only" | "none" | undefined;
+  /**
+   * True when the ink is already flattened into `dataUrl` (legacy pages and
+   * screen grabs). When false the snapshot is a clean background frame and the
+   * objects must be drawn on top at render/export time.
+   */
+  inkBaked?: boolean | undefined;
 }
 
 export type PageType = "video" | "blank" | "custom";
