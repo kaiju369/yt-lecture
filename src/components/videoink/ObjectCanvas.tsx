@@ -127,7 +127,14 @@ export function ObjectCanvas({
     const d = drag.current;
 
     if (d?.mode === "ink" && d.points.length) {
-      drawObject(ctx, makeStroke(d.points, d.pressureMode, tool, prefs, 0), rect);
+      // Use the exact same sampling pipeline as the committed stroke, so the
+      // ink never "jumps" bolder / thinner the moment the pen lifts.
+      const raw = makeStroke(d.points, d.pressureMode, tool, prefs, 0);
+      drawObject(
+        ctx,
+        { ...raw, points: smoothStroke(d.points, prefs.smoothing) },
+        rect,
+      );
     }
     if (d?.mode === "shape") {
       drawObject(ctx, makeShape(d.a, d.b, tool, prefs, 0), rect);
